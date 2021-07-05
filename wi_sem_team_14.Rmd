@@ -63,6 +63,18 @@ Wie viele verschiedene Bearbeitungsfälle gibt es?
 ```{r unique cases}
 unique(clean_events$CASE_ID) %>% length()
 ```
+Wie sind die Events auf die Servicepoints verteilt?
+```{r servicepoint distribution}
+# servicepoints
+servicepoints <- table(clean_logs$SERVICEPOINT)
+barplot(main="logs per servicepoint",servicepoints)
+
+sp_distro_plot <- ggplot(data=as.data.frame(servicepoints), aes(x = Var1, y= Freq, label= Freq)) +
+  geom_bar(stat="identity") +
+  geom_text(size = 3, position = position_stack(vjust = 0.5))
+
+sp_distro_plot
+```
 
 ### Visualisierung
 
@@ -81,9 +93,10 @@ by_servicep <- group_by(distinct_cases, SERVICEPOINT) %>%
 by_servicep$quota = by_servicep$fivedaysum / by_servicep$all * 100
 
 # plot zeichnen
-plot <- ggplot(data = by_servicep, aes(x=SERVICEPOINT, y=quota)) +
+plot <- ggplot(data = by_servicep, aes(x=SERVICEPOINT, y=quota, label=all)) +
   geom_bar(stat="identity") + ylab("\"In time\" repair quota in %")+
-  xlab("Servicepoint")
+  xlab("Servicepoint") +
+  geom_text(size = 3, position = position_stack(vjust = 0.5))
 plot
 ```
 Clusteranalyse Anfälligkeit der Geräte
@@ -103,7 +116,7 @@ ggplot(avg_duration_by_device, aes(case_count, avg_time)) + geom_point()
 h.cluster <- avg_duration_by_device %>% dist(., method = "euclidean") %>% hclust(., method="ward.D")
 plot(h.cluster)
 
-p.cluster <- avg_duration_by_device %>% select(avg_time, case_count) %>% kmeans(., 4)
+p.cluster <- avg_duration_by_device %>% select(avg_time, case_count) %>% kmeans(., 3)
 p.cluster$cluster <- as.factor(p.cluster$cluster)
 
 ggplot(avg_duration_by_device, aes(case_count, avg_time, label = DEVICETYPE)) + 
