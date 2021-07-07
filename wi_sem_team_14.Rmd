@@ -10,12 +10,16 @@ require(dplyr)
 require(broom)
 require(ggplot2)
 require(cluster)
-knitr::opts_chunk$set(echo = TRUE)
 library("tidyverse")
 library(dplyr)
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Einführung
+# Introduction
+
+# Process analytics
+
+## Information gathering
 
 Datensatz lesen und generellen Überblick verschaffen.
 
@@ -35,14 +39,14 @@ head(event_log, n=10)
 ```
 
 Wertebereich für interessante Spalten ausgeben
-```{r }
+```{r uniques}
 unique(event_log$ACTIVITY)
 unique(event_log$DEVICETYPE)
 unique(event_log$SERVICEPOINT)
 unique(event_log$REPAIR_IN_TIME_5D)
 ```
 
-## Datenreinigung
+## Data cleaning
 
 Datensätze ohne Angabe zu Servicepoint oder Gerät ausschließen.
 
@@ -54,9 +58,7 @@ Datensatz aus unvollständigen Sätzen abspalten.
 ```{r corrupted}
 corrupted_events <- subset(event_log,is.na(DEVICETYPE) | is.na(SERVICEPOINT))
 ```
-## Datenanalyse
-
-### Grundlagen
+## Data analytics
 
 Wie viele verschiedene Bearbeitungsfälle gibt es?
 
@@ -64,20 +66,18 @@ Wie viele verschiedene Bearbeitungsfälle gibt es?
 unique(clean_events$CASE_ID) %>% length()
 ```
 Wie sind die Events auf die Servicepoints verteilt?
-```{r servicepoint distribution}
+```{r sp-distro}
 # servicepoints
-servicepoints <- table(clean_logs$SERVICEPOINT)
-barplot(main="logs per servicepoint",servicepoints)
+servicepoints <- table(clean_events$SERVICEPOINT)
 
-sp_distro_plot <- ggplot(data=as.data.frame(servicepoints), aes(x = Var1, y= Freq, label= Freq)) +
+sp_df = as.data.frame(servicepoints) %>% rename(Servicepoint = Var1)
+
+sp_distro_plot <- ggplot(data=sp_df, aes(x = Servicepoint, y= Freq, label= Freq)) +
   geom_bar(stat="identity") +
   geom_text(size = 3, position = position_stack(vjust = 0.5))
 
 sp_distro_plot
 ```
-
-### Visualisierung
-
 5-Tage-Reperatur-Quote nach Servicepoint
 
 ```{r 5-day-quota}
@@ -124,12 +124,15 @@ ggplot(avg_duration_by_device, aes(case_count, avg_time, label = DEVICETYPE)) +
   geom_label(aes(fill = p.cluster$cluster), colour = "white", fontface = "bold", size = 2)
 ```
 
-## Including Plots
+# Business implications
 
-You can also embed plots, for example:
+## Optimizing load distribution
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
+Currently the distribution of the workload among the servicepoints is suboptimal. The servicepoints E and L account for the majority of events, while A - D barely logged anything. This leads us to the assumption that most of the service cases are being processed by those SPs. We expect that an equal distribution of the workload between all available SPs would lead to an increase in repair speed and total capacity.
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## Error-prone devices
+
+Different devices have a different proneness to technical failure. The underlying assumption is that those devices which are most likely to fail, will be brought in for service the most often. Also the devices differ in how long it takes on average to repair them. Using these two factors, one can estimate how service and resource intensive these devices are during their lifetime.
+
+The cluster analysis shows which devices are the most resource intensive ones by dividing them into three groups. The most error-prone device, with over 3000 service cases in the observed timespan and an average repair time of 27 days is the model AB52. We suggest removing this device from the product portfolio, as frequent failure of the device has a negative impact on customer satisfaction. 
+
