@@ -124,6 +124,12 @@ ggplot(avg_duration_by_device, aes(case_count, avg_time, label = DEVICETYPE)) +
   geom_label(aes(fill = p.cluster$cluster), colour = "white", fontface = "bold", size = 2)
 ```
 
+## Celonis
+
+
+
+
+
 # Business implications
 
 ## Optimizing load distribution
@@ -135,4 +141,6 @@ Currently the distribution of the workload among the servicepoints is suboptimal
 Different devices have a different proneness to technical failure. The underlying assumption is that those devices which are most likely to fail, will be brought in for service the most often. Also the devices differ in how long it takes on average to repair them. Using these two factors, one can estimate how service and resource intensive these devices are during their lifetime.
 
 The cluster analysis shows which devices are the most resource intensive ones by dividing them into three groups. The most error-prone device, with over 3000 service cases in the observed timespan and an average repair time of 27 days is the model AB52. We suggest removing this device from the product portfolio, as frequent failure of the device has a negative impact on customer satisfaction. 
+
+
 
