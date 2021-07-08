@@ -126,6 +126,8 @@ ggplot(avg_duration_by_device, aes(case_count, avg_time, label = DEVICETYPE)) +
 
 ## Celonis
 
+![Happy Path](https://github.com/CTM-development/WI_Seminar/blob/main/Happy%20Path.jpg?raw=true)
+
 
 
 
