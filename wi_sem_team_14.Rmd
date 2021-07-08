@@ -126,7 +126,20 @@ ggplot(avg_duration_by_device, aes(case_count, avg_time, label = DEVICETYPE)) +
 
 ## Celonis
 
+"Happy Path" with the shortest throughput time:
+processes should be oriented to it
 ![Happy Path](https://github.com/CTM-development/WI_Seminar/blob/main/Happy%20Path.jpg?raw=true)
+Top 10 paths with the shortest throughput times:
+no improvements needed
+conforms 0% of all paths
+![Top10 shortest throughput time](https://github.com/CTM-development/WI_Seminar/blob/main/Top%2010%20shortest%20Throughput%20Time.jpg?raw=true)
+Top 10 paths with the longest throughput times:
+should be improved
+![top10 longest throughput time](https://github.com/CTM-development/WI_Seminar/blob/main/Top%2010%20longest%20Throughput%20Time.jpg?raw=true)
+Top 10 most common paths:
+conform to 21% of all possible paths
+![top10 most common](https://github.com/CTM-development/WI_Seminar/blob/main/Top10%20Most%20Common.jpg?raw=true)
+
 
 
 
