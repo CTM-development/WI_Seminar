@@ -142,5 +142,8 @@ Different devices have a different proneness to technical failure. The underlyin
 
 The cluster analysis shows which devices are the most resource intensive ones by dividing them into three groups. The most error-prone device, with over 3000 service cases in the observed timespan and an average repair time of 27 days is the model AB52. We suggest removing this device from the product portfolio, as frequent failure of the device has a negative impact on customer satisfaction. 
 
+## Improve date collection
+
+In order to perform detailed analysis of the service process, more data about the timing of activities is needed. Currently only the completion time of an activity is logged. We recommend to also track the start time of each activity. This way it's possible to make statements about the real duration of the activity and possible idle-times. As of now, it's impossible to say if an activity took a lot of time or if there was a lot of idle-time before it started.
 
 
