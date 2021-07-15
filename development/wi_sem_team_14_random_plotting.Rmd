@@ -1,0 +1,115 @@
+---
+title: "wi_sem_team_14_plotting"
+author: "Chris"
+date: "7/11/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+# using pacman to laod and install any packages
+install.packages("pacman")
+
+# load packages
+pacman::p_load(pacman, tidyverse, rio, dplyr, ggplot2, plotly, tidyr, rmarkdown, tinytex)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r dataloading, include=FALSE}
+# read dataset
+data_event_log <- read_delim(
+  "./data/event_log.csv",
+  delim=';'
+)
+```
+
+Short summary of the raw dataset
+```{r summary, include=TRUE}
+summary(data_event_log)
+head(data_event_log)
+```
+
+Wertebereich für interessante Spalten ausgeben
+```{r uniques}
+unique(data_event_log$ACTIVITY)
+unique(data_event_log$DEVICETYPE)
+unique(data_event_log$SERVICEPOINT)
+unique(data_event_log$REPAIR_IN_TIME_5D)
+```
+
+## Data cleaning
+
+```{r data_cleaning, echo=FALSE}
+# cleaning the data
+# exclude rows containing null-values
+clean_logs <- na.omit(data_event_log)
+corrupted_logs <- subset(data_event_log,
+                          is.na(DEVICETYPE) | 
+                          is.na(SERVICEPOINT)
+                         )
+df_clean_logs <- as.data.frame(do.call(cbind, clean_logs))
+```
+
+Some data exploration
+
+```{r data_exploration, echo=FALSE}
+print('Number of datapoint in the clean dataset:')
+nrow(df_clean_logs)
+print("Number of unique case IDs:")
+unique(clean_logs$CASE_ID) %>% length()
+```
+
+## Basic univariate plotting
+
+our quantitative variables are :
+
+* NONE ??
+
+our qualitative variables are:
+
+* CASE_ID (not sure tbh, bc this is part of the "primary key" of the dataset entities) {string} <- maybe convert to integer for easier processing
+* ACTIVITY {string}
+* SERVICEPOINT {char}
+* DEVICETYPE {string}
+* REPAIR_IN_TIME {double} <- maybe convert to boolean for easier processing
+
+neither?:
+
+* TIMESTAMP {double - feels more like a string tho}
+
+### Plotting the frequency of our qualitative variables:
+```{r univariate_plotting, echo=FALSE}
+# activity count
+activity_count <- table(clean_logs$ACTIVITY)
+barplot(main="logs per activitytype", activity_count)
+
+# rep in time
+timely_repair <- table(clean_logs$REPAIR_IN_TIME_5D)
+barplot(main="repair in time", timely_repair)
+
+# logs per devicetype
+devicetypes_counter <- table(clean_logs$DEVICETYPE)
+barplot(main="logs per devicetype", devicetypes_counter)
+
+# servicepoints
+servicepoints <- table(clean_logs$SERVICEPOINT)
+barplot(main="logs per servicepoint",servicepoints)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
