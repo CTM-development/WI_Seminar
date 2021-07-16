@@ -77,6 +77,7 @@ df_cl_mod$DATE <- with(df_clean_logs, as.Date(TIMESTAMP))
 # creating WEEKDAY column
 df_cl_mod$WEEKDAY <- weekdays(df_cl_mod$DATE)
 
+
 sleeper_cases <- c("Case5304", "Case5502", "Case5544")
 
 df_sleeper_cases <- df_clean_logs[df_cl_mod$CASE_ID%in%sleeper_cases,]
@@ -126,9 +127,31 @@ barplot(main="logs per devicetype", devicetypes_counter)
 # servicepoints
 servicepoints <- table(clean_logs$SERVICEPOINT)
 barplot(main="logs per servicepoint",servicepoints)
+
+# logs weekday
+logs_per_weekday <- table(df_cl_mod$WEEKDAY)
+barplot(main="logs per weekday", logs_per_weekday)
+
+# logs per date
+logs_per_date <- table(df_cl_mod$DATE)
+plot(logs_per_date)
+
 ```
 
 
+
+```{r random_plotting, echo=FALSE}
+# plot the data using ggplot2 and pipes
+
+df_date_sum_case_id <- df_cl_mod %>% group_by(DATE) %>% tally()
+
+df_date_sum_case_id %>%
+ggplot(aes(x = DATE, y = n)) +
+      geom_point(color = "darkorchid4") +
+      labs(title = "Cases per date",
+           y = "Num of cases)",
+           x = "Date") + theme_bw(base_size = 15)
+```
 
 
 
