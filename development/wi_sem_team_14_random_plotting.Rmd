@@ -12,7 +12,7 @@ output:
 install.packages("pacman")
 
 # load packages
-pacman::p_load(pacman, tidyverse, rio, dplyr, ggplot2, plotly, tidyr, rmarkdown, tinytex)
+pacman::p_load(pacman, tidyverse, rio, dplyr, ggplot2, plotly, tidyr, rmarkdown, tinytex, lubridate)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -21,7 +21,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r dataloading, include=FALSE}
 # read dataset
 data_event_log <- read_delim(
-  "./data/event_log.csv",
+  "../data/event_log.csv",
   delim=';'
 )
 ```
@@ -51,6 +51,8 @@ corrupted_logs <- subset(data_event_log,
                           is.na(SERVICEPOINT)
                          )
 df_clean_logs <- as.data.frame(do.call(cbind, clean_logs))
+
+df_clean_logs$TIMESTAMP <- as.POSIXct(clean_logs$TIMESTAMP, tz="",format="%Y-%m-%d %H:%M:%OS", optional = FALSE)
 ```
 
 Some data exploration
@@ -61,6 +63,33 @@ nrow(df_clean_logs)
 print("Number of unique case IDs:")
 unique(clean_logs$CASE_ID) %>% length()
 ```
+### Some data modification
+
+* creating column DATE (timestamps without the time information)
+* creating column WEEKDAY (not sure if we need this as a column in the dataset, can just compute it insitro when needed)
+
+```{r data_modification, echo=FALSE}
+df_cl_mod <- df_clean_logs
+
+# creating DATE column (calculating for each row)
+df_cl_mod$DATE <- with(df_clean_logs, as.Date(TIMESTAMP))
+
+# creating WEEKDAY column
+df_cl_mod$WEEKDAY <- weekdays(df_cl_mod$DATE)
+
+sleeper_cases <- c("Case5304", "Case5502", "Case5544")
+
+df_sleeper_cases <- df_clean_logs[df_cl_mod$CASE_ID%in%sleeper_cases,]
+df_cl_mod <- df_cl_mod[!(df_clean_logs$CASE_ID%in%sleeper_cases),]
+
+
+```
+
+```{r save_modifed_data}
+# writing the modified df to csv with relative path to the folder "data"
+write.csv(df_clean_logs, "../data/modified_logs.csv")
+```
+
 
 ## Basic univariate plotting
 
