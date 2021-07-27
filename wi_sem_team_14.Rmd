@@ -124,22 +124,39 @@ ggplot(avg_duration_by_device, aes(case_count, avg_time, label = DEVICETYPE)) +
   geom_label(aes(fill = p.cluster$cluster), colour = "white", fontface = "bold", size = 2)
 ```
 
+
 ## Celonis
 
-"Happy Path" with the shortest throughput time:
-processes should be oriented to it
-![Happy Path](https://github.com/CTM-development/WI_Seminar/blob/main/Happy%20Path.jpg?raw=true)
+"Happy Path" + throughput time per month:
+optimal sequence of activities
+takes an average of 24 days, all paths got 17 days average duration
+throughput time was on its maximum in October 2018 (24 days) and took 20 days in January, February and April, the second highest duration
+cases before year 2018 were erased as in other analytics because first cases documented were in 2013, but with throughput times of 5 years (and missing entries?)
+![Happy Path + throughput time per month](https://github.com/CTM-development/WI_Seminar/blob/main/celonis_imgs/HappyPath+DurationPerMonth.jpg?raw=true)
+
+"Happy Path" + average case number per day in one month:
+case count was highest in October 2018 (103 cases), February 2019 (107), March 2019 (102) and April 2019 (103)
+regarding the previous celonis analysis the throughput time per month and the average of cases per day in one month can be seen in relation to each other
+![Happy Path + average case number per day in one month](https://github.com/CTM-development/WI_Seminar/blob/main/celonis_imgs/HappyPath+CasesPerDay.jpg?raw=true)
+
+Bottlenecks:
+![Bottlenecks](https://github.com/CTM-development/WI_Seminar/blob/main/celonis_imgs/Bottlenecks.jpg?raw=true)
+
+Path with shortest throughput time:
+![Path with shortest throughput time](https://github.com/CTM-development/WI_Seminar/blob/main/celonis_imgs/Path%20with%20shortest%20Throughput%20Time.PNG?raw=true)
+
 Top 10 paths with the shortest throughput times:
 no improvements needed
 conforms 0% of all paths
 ![Top10 shortest throughput time](https://github.com/CTM-development/WI_Seminar/blob/main/Top%2010%20shortest%20Throughput%20Time.jpg?raw=true)
+
 Top 10 paths with the longest throughput times:
 should be improved
 ![top10 longest throughput time](https://github.com/CTM-development/WI_Seminar/blob/main/Top%2010%20longest%20Throughput%20Time.jpg?raw=true)
+
 Top 10 most common paths:
 conform to 21% of all possible paths
 ![top10 most common](https://github.com/CTM-development/WI_Seminar/blob/main/Top10%20Most%20Common.jpg?raw=true)
-
 
 
 
