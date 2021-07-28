@@ -127,11 +127,11 @@ ggplot(avg_duration_by_device, aes(case_count, avg_time, label = DEVICETYPE)) +
 
 ## Celonis
 
+Note: Cases before year 2018 were erased as in other analytics because first cases documented were in 2013, but marked with throughput times of 5 years and missing entries.
+
 "Happy Path" + throughput time per month:
-optimal sequence of activities
-takes an average of 24 days, all paths got 17 days average duration
+This "Happy Path" in the picture shows an optimal sequence of activities. It takes an average of 24 days, all paths got 17 days average duration. 
 throughput time was on its maximum in October 2018 (24 days) and took 20 days in January, February and April, the second highest duration
-cases before year 2018 were erased as in other analytics because first cases documented were in 2013, but with throughput times of 5 years (and missing entries?)
 ![Happy Path + throughput time per month](https://github.com/CTM-development/WI_Seminar/blob/main/celonis_imgs/HappyPath+DurationPerMonth.jpg?raw=true)
 
 "Happy Path" + average case number per day in one month:
@@ -140,6 +140,10 @@ regarding the previous celonis analysis the throughput time per month and the av
 ![Happy Path + average case number per day in one month](https://github.com/CTM-development/WI_Seminar/blob/main/celonis_imgs/HappyPath+CasesPerDay.jpg?raw=true)
 
 Bottlenecks:
+Some of the activity connections which cost 1 day or more to process should be revised, especially the ones with throughput time increase of 5 days or more.
+For example, 10% of the steps from NoteWorkshop to InDelivery can take the maximum process delay of 10 days. Due to this, the packing and sending of the devices should be sped up.
+Other relevant consecutive activities to improve are DeviceReceived->InDelivery, DeviceReceived->Letter, NoteHotline->InDelivery, which take 5 or more days and affect 25% or more.
+Creation->DeviceReceived with 54% of affected cases and 6 delay days can't be altered since the customer is in charge to send the device after the service task creation and the delivery time can't be influenced.
 ![Bottlenecks](https://github.com/CTM-development/WI_Seminar/blob/main/celonis_imgs/Bottlenecks.jpg?raw=true)
 
 Path with shortest throughput time:
