@@ -1,0 +1,167 @@
+---
+title: "wi_sem_team_14_plotting"
+author: "Chris"
+date: "7/11/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+# using pacman to laod and install any packages
+install.packages("pacman")
+
+# load packages
+pacman::p_load(pacman, tidyverse, rio, dplyr, ggplot2, plotly, tidyr, rmarkdown, tinytex, lubridate)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r dataloading, include=FALSE}
+# read dataset
+data_event_log <- read_delim(
+  "../data/event_log.csv",
+  delim=';'
+)
+```
+
+Short summary of the raw dataset
+```{r summary, include=TRUE}
+summary(data_event_log)
+head(data_event_log)
+```
+
+Wertebereich für interessante Spalten ausgeben
+```{r uniques}
+unique(data_event_log$ACTIVITY)
+unique(data_event_log$DEVICETYPE)
+unique(data_event_log$SERVICEPOINT)
+unique(data_event_log$REPAIR_IN_TIME_5D)
+```
+
+## Data cleaning
+
+```{r data_cleaning, echo=FALSE}
+# cleaning the data
+# exclude rows containing null-values
+clean_logs <- na.omit(data_event_log)
+corrupted_logs <- subset(data_event_log,
+                          is.na(DEVICETYPE) | 
+                          is.na(SERVICEPOINT)
+                         )
+df_clean_logs <- as.data.frame(do.call(cbind, clean_logs))
+
+df_clean_logs$TIMESTAMP <- as.POSIXct(clean_logs$TIMESTAMP, tz="",format="%Y-%m-%d %H:%M:%OS", optional = FALSE)
+```
+
+Some data exploration
+
+```{r data_exploration, echo=FALSE}
+print('Number of datapoint in the clean dataset:')
+nrow(df_clean_logs)
+print("Number of unique case IDs:")
+unique(clean_logs$CASE_ID) %>% length()
+```
+### Some data modification
+
+* creating column DATE (timestamps without the time information)
+* creating column WEEKDAY (not sure if we need this as a column in the dataset, can just compute it insitro when needed)
+
+```{r data_modification, echo=FALSE}
+df_cl_mod <- df_clean_logs
+
+# creating DATE column (calculating for each row)
+df_cl_mod$DATE <- with(df_clean_logs, as.Date(TIMESTAMP))
+
+# creating WEEKDAY column
+df_cl_mod$WEEKDAY <- weekdays(df_cl_mod$DATE)
+
+
+sleeper_cases <- c("Case5304", "Case5502", "Case5544")
+
+df_sleeper_cases <- df_clean_logs[df_cl_mod$CASE_ID%in%sleeper_cases,]
+df_cl_mod <- df_cl_mod[!(df_clean_logs$CASE_ID%in%sleeper_cases),]
+
+
+```
+
+```{r save_modifed_data}
+# writing the modified df to csv with relative path to the folder "data"
+write.csv(df_clean_logs, "../data/modified_logs.csv")
+```
+
+
+## Basic univariate plotting
+
+our quantitative variables are :
+
+* NONE ??
+
+our qualitative variables are:
+
+* CASE_ID (not sure tbh, bc this is part of the "primary key" of the dataset entities) {string} <- maybe convert to integer for easier processing
+* ACTIVITY {string}
+* SERVICEPOINT {char}
+* DEVICETYPE {string}
+* REPAIR_IN_TIME {double} <- maybe convert to boolean for easier processing
+
+neither?:
+
+* TIMESTAMP {double - feels more like a string tho}
+
+### Plotting the frequency of our qualitative variables:
+```{r univariate_plotting, echo=FALSE}
+# activity count
+activity_count <- table(clean_logs$ACTIVITY)
+barplot(main="logs per activitytype", activity_count)
+
+# rep in time
+timely_repair <- table(clean_logs$REPAIR_IN_TIME_5D)
+barplot(main="repair in time", timely_repair)
+
+# logs per devicetype
+devicetypes_counter <- table(clean_logs$DEVICETYPE)
+barplot(main="logs per devicetype", devicetypes_counter)
+
+# servicepoints
+servicepoints <- table(clean_logs$SERVICEPOINT)
+barplot(main="logs per servicepoint",servicepoints)
+
+# logs weekday
+logs_per_weekday <- table(df_cl_mod$WEEKDAY)
+barplot(main="logs per weekday", logs_per_weekday)
+
+# logs per date
+logs_per_date <- table(df_cl_mod$DATE)
+plot(logs_per_date)
+
+```
+
+
+
+```{r random_plotting, echo=FALSE}
+# plot the data using ggplot2 and pipes
+
+df_date_sum_case_id <- df_cl_mod %>% group_by(DATE) %>% tally()
+
+df_date_sum_case_id %>%
+ggplot(aes(x = DATE, y = n)) +
+      geom_point(color = "darkorchid4") +
+      labs(title = "Cases per date",
+           y = "Num of cases)",
+           x = "Date") + theme_bw(base_size = 15)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

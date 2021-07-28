@@ -8,7 +8,7 @@ pacman::p_load(pacman, tidyverse)
 
 # read dataset
 data_event_log <- read_delim(
-  "./data/event_log.csv",
+  "../data/event_log.csv",
   delim=';'
 )
 
