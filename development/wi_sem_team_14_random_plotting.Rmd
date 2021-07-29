@@ -12,7 +12,7 @@ output:
 install.packages("pacman")
 
 # load packages
-pacman::p_load(pacman, tidyverse, rio, dplyr, ggplot2, plotly, tidyr, rmarkdown, tinytex, lubridate)
+pacman::p_load(pacman, tidyverse, rio, dplyr, ggplot2, plotly, tidyr, rmarkdown, tinytex, lubridate, gridExtra)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -63,7 +63,7 @@ nrow(df_clean_logs)
 print("Number of unique case IDs:")
 unique(clean_logs$CASE_ID) %>% length()
 ```
-### Some data modification
+### Some data modification and testing
 
 * creating column DATE (timestamps without the time information)
 * creating column WEEKDAY (not sure if we need this as a column in the dataset, can just compute it insitro when needed)
@@ -83,12 +83,38 @@ sleeper_cases <- c("Case5304", "Case5502", "Case5544")
 df_sleeper_cases <- df_clean_logs[df_cl_mod$CASE_ID%in%sleeper_cases,]
 df_cl_mod <- df_cl_mod[!(df_clean_logs$CASE_ID%in%sleeper_cases),]
 
-
+# checking if some case ids have datapoints with mixed rit values (rit = repair in time 5 days)
+df_check_for_corrupt_repair <- df_cl_mod %>% group_by(CASE_ID) %>% summarise(ACTIVITY_COUNT = n(),
+                                                                             RIT = first(REPAIR_IN_TIME_5D),
+                                                                             RIT_GROUP_COUNTER = (table(REPAIR_IN_TIME_5D))[2],
+                                                                             ERROR = !((RIT == 0 & 0 == RIT_GROUP_COUNTER) | (RIT ==1 & RIT_GROUP_COUNTER == ACTIVITY_COUNT))
+                                                                             )
 ```
 
+#### creating a new dataframe containing aggregated information per case_id
+
+```{r create_new_dataframe_case_id_aggregats}
+case_id_aggregated_information <- 
+  df_cl_mod %>% group_by(CASE_ID) %>% 
+  summarise(SERVICEPOINT = first(SERVICEPOINT),
+            DEVICETYPE = first(DEVICETYPE), 
+            ACTIVITY_COUNT = n(),
+            START_DATETIME = min(TIMESTAMP), 
+            END_DATETIME = max(TIMESTAMP),
+            RIT = first(REPAIR_IN_TIME_5D), 
+            THROUGHPUT_TIME_HOURS = 
+              as.numeric(difftime(END_DATETIME, START_DATETIME, units="hours"))
+)
+# order dataset based on START_DATETIME
+case_id_aggregated_information <- case_id_aggregated_information[order(case_id_aggregated_information$START_DATETIME, decreasing = FALSE),]
+
+rit_cases_too_long <- case_id_aggregated_information[case_id_aggregated_information$RIT == 1 & case_id_aggregated_information$THROUGHPUT_TIME_HOURS>120,]
+```
+
+write out the new datasets
 ```{r save_modifed_data}
 # writing the modified df to csv with relative path to the folder "data"
-write.csv(df_clean_logs, "../data/modified_logs.csv")
+write.csv(df_cl_mod, "../data/modified_logs.csv")
 ```
 
 
@@ -134,10 +160,39 @@ barplot(main="logs per weekday", logs_per_weekday)
 
 # logs per date
 logs_per_date <- table(df_cl_mod$DATE)
-plot(logs_per_date)
+plot(main="logs per date", logs_per_date)
 
 ```
+```{r basic plotting the case_id_aggregated_information dataset}
+plot(main="throughput time ordered by START_DATETIME",case_id_aggregated_information$START_DATETIME, case_id_aggregated_information$THROUGHPUT_TIME_HOURS, type = 'h')
 
+```
+```{r }
+ ggplot(case_id_aggregated_information, aes(x = START_DATETIME, y = THROUGHPUT_TIME_HOURS)) + 
+  geom_line() +
+  labs(title = "Throughput time (in hrs) per case sorted by start datetime",
+           y = "Throughput time in hours",
+           x = "Start datetime")
+```
+
+
+```{r}
+gglines_tptime_rit_cases <- 
+  ggplot(case_id_aggregated_information[case_id_aggregated_information$RIT == 1 ,], aes(x = START_DATETIME, y = THROUGHPUT_TIME_HOURS)) + 
+  geom_line() +
+  labs(title = "Throughput time (in hrs) of RIT cases sorted by start datetime",
+           y = "Throughput time in hours",
+           x = "Start datetime")
+
+gglines_tptime_rit_cases_hours_overflow <- 
+  ggplot(case_id_aggregated_information[case_id_aggregated_information$RIT == 1 & case_id_aggregated_information$THROUGHPUT_TIME_HOURS>120,], aes(x = START_DATETIME, y = THROUGHPUT_TIME_HOURS)) + 
+  geom_line() +
+  labs(title = "Throughput time (in hrs) of RIT cases over 120hrs",
+           y = "Throughput time in hours",
+           x = "Start datetime")
+
+grid.arrange(gglines_tptime_rit_cases, gglines_tptime_rit_cases_hours_overflow, ncol = 2)
+```
 
 
 ```{r random_plotting, echo=FALSE}
