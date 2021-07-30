@@ -187,7 +187,7 @@ Regarding the previous celonis analysis, the average throughput time per month a
 Bottlenecks:
 Some of the activity connections which cost 1 day or more to process should be revised, especially the ones with throughput time increase of 5 days or more. 
 For example, 10% of the steps from NoteWorkshop to InDelivery can take the maximum process delay of 10 days. Due to this, the packing and sending of the devices should be sped up.
-Other relevant consecutive activities to improve are DeviceReceived->InDelivery, DeviceReceived->Letter, NoteHotline->InDelivery, which take 5 or more days and affect 25% or more each. Often, there is a delay after the activity DeviceReceived, so it should be investigated why further actions such as Transmission or Letter take an unnecessarily long time to be done.
+Other relevant consecutive activities to improve are DeviceReceived->InDelivery, DeviceReceived->Letter, NoteHotline->InDelivery, which take 5 or more days and affect 25% or more each. Often, there is a delay after the activity DeviceReceived, so it should be investigated why further actions such as Transmission or Letter take an unnecessarily long time to be executed.
 Creation->DeviceReceived with 54% of affected cases and 6 days of delay can't be altered since the customer is in charge to send the device after the service task creation and the delivery time can't be influenced.
 ![Bottlenecks](https://github.com/CTM-development/WI_Seminar/blob/main/celonis_imgs/Bottlenecks.jpg?raw=true)
 
