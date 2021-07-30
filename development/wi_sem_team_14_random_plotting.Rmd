@@ -181,9 +181,9 @@ tp_time_monthly_avg <-
 write out the new datasets to csv
 ```{r save_modifed_data}
 # writing the modified df to csv with relative path to the folder "data"
-write.csv(df_cl_mod, "../data/modified_logs.csv")
-write.csv(case_id_aggregated_information, "../data/case_id_aggregated_information.csv")
-write.csv(activity_information, "../data/activity_information.csv")
+# write.csv(df_cl_mod, "../data/modified_logs.csv")
+# write.csv(case_id_aggregated_information, "../data/case_id_aggregated_information.csv")
+# write.csv(activity_information, "../data/activity_information.csv")
 ```
 
 

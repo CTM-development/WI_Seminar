@@ -22,12 +22,19 @@ library(daqapo)
 library(broom)
 library(ggplot2)
 library(cluster)
+
+# using pacman to laod and install any packages
+install.packages("pacman")
+
+# load packages
+pacman::p_load(pacman, tidyverse, rio, dplyr, ggplot2, plotly, tidyr, rmarkdown, tinytex, lubridate, gridExtra, scales)
+
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Lucca Baumgärtner         (22699532)  
+Lucca BaumgÃ¤rtner        (22699532)  
 Theresa Riegel            (22527270)
-Christopher Minderlein    (22484855)  
+Christopher Minderlein    (22484855)
 
 # Introduction
 
@@ -92,19 +99,132 @@ Create a subset of corrupt logs for further investigation.
 corrupted_events <- subset(event_log,is.na(DEVICETYPE) | is.na(SERVICEPOINT))
 ```
 
+
+```{r chris data motification, echo=FALSE}
+# cleaning the data and doing some tests
+df_clean_logs <- as.data.frame(do.call(cbind, clean_events))
+
+df_clean_logs$TIMESTAMP <- as.POSIXct(clean_events$TIMESTAMP, tz="",format="%Y-%m-%d %H:%M:%OS", optional = FALSE)
+```
+
+```{r creating df_mod_logs (a modificated copy of the base dataset), echo=FALSE}
+df_mod_logs <- df_clean_logs
+
+# creating DATE column (calculating for each row)
+df_mod_logs$DATE <- with(df_clean_logs, as.Date(TIMESTAMP))
+
+# creating WEEKDAY column
+df_mod_logs$WEEKDAY <- weekdays(df_mod_logs$DATE)
+
+# those cases started in 2013 and ended in 2018
+sleeper_cases <- c("Case5304", "Case5502", "Case5544")
+
+df_sleeper_cases <- df_clean_logs[df_mod_logs$CASE_ID%in%sleeper_cases,]
+df_mod_logs <- df_mod_logs[!(df_clean_logs$CASE_ID%in%sleeper_cases),]
+
+# checking if some case ids have datapoints with mixed rit values (rit = repair in time 5 days)
+df_check_for_corrupt_repair <- df_mod_logs %>% group_by(CASE_ID) %>% summarise(ACTIVITY_COUNT = n(),
+                                                                             RIT = first(REPAIR_IN_TIME_5D),
+                                                                             RIT_GROUP_COUNTER = (table(REPAIR_IN_TIME_5D))[2],
+                                                                             ERROR = !((RIT == 0 & 0 == RIT_GROUP_COUNTER) | (RIT ==1 & RIT_GROUP_COUNTER == ACTIVITY_COUNT))
+                                                                             )
+```
+
+#### creating a new dataframe containing aggregated information per case_id
+
+```{r create_new_dataframe_case_id_aggregats}
+case_id_aggregated_information <- 
+  df_mod_logs %>% group_by(CASE_ID) %>% 
+  summarise(SERVICEPOINT = first(SERVICEPOINT),
+            DEVICETYPE = first(DEVICETYPE), 
+            ACTIVITY_COUNT = n(),
+            START_DATETIME = min(TIMESTAMP), 
+            END_DATETIME = max(TIMESTAMP),
+            RIT = first(REPAIR_IN_TIME_5D), 
+            THROUGHPUT_TIME_HOURS = 
+              as.numeric(difftime(END_DATETIME, START_DATETIME, units="hours")),
+            START_MONTH = month(START_DATETIME),
+            START_YEAR = year(START_DATETIME),
+)
+# order dataset based on START_DATETIME
+case_id_aggregated_information <- case_id_aggregated_information[order(case_id_aggregated_information$START_DATETIME, decreasing = FALSE),]
+            
+rit_cases_too_long <- case_id_aggregated_information[case_id_aggregated_information$RIT == 1 & case_id_aggregated_information$THROUGHPUT_TIME_HOURS>120,]
+```
+
+### new dataframe containing duration information of each activity log
+
+```{r}
+df_activity_information <- 
+  df_mod_logs %>% 
+  group_by(CASE_ID, ACTIVITY) %>%
+  summarise(
+    START_TS = min(TIMESTAMP)
+  )
+
+calc_duration = function(x){
+  current_activity <- x[2]
+  current_case_id <- x[1]
+  current_activity_ts <- as.POSIXct(x[3], tz="UTC",format="%Y-%m-%d %H:%M:%OS", optional = FALSE)
+  
+  # print(paste("current case id: ", current_case_id))
+  # print(paste("current activity: " , current_activity))
+  # print(paste("current activity ts: " , current_activity_ts))
+  
+  ts_df <- as.data.frame(select(df_mod_logs[df_mod_logs$CASE_ID == current_case_id & df_mod_logs$ACTIVITY != current_activity, ], ACTIVITY, TIMESTAMP))
+  # renaming
+  names(ts_df)[names(ts_df)=="ACTIVITY"] <- "NEXT_ACTIVITY"
+  names(ts_df)[names(ts_df)=="TIMESTAMP"] <- "NEXT_ACTIVITY_TS"
+  
+  # print(ts_df$TIMESTAMP)
+  
+  ts_df <- ts_df[(difftime(ts_df$NEXT_ACTIVITY_TS, current_activity_ts)>0), ]
+  
+  ts_df[order(ts_df$NEXT_ACTIVITY_TS), ]
+  
+  # print(ts_df$TIMESTAMP)
+  # print(ts_df$ACTIVITY)
+  
+  re <- ts_df[1:1, ]
+  re$ACTIVITY <- current_activity
+  re$CASE_ID <- current_case_id
+  
+  return(re)
+}
+
+re_list <- apply(df_activity_information, 1 , calc_duration)
+print("apply done")
+re_df <- as.data.frame(do.call(rbind, re_list)) 
+
+merge_columns <- c("CASE_ID", "ACTIVITY")
+df_activity_information <- merge(df_activity_information, re_df, by=merge_columns, all.x = TRUE)
+
+df_activity_information$DURATION = difftime(df_activity_information$NEXT_ACTIVITY_TS, df_activity_information$START_TS, units = "hours")
+
+```
+
+### new dataframe containg throughput-time summaries per month
+
+```{r}
+# grp by month
+tp_time_monthly_avg <- 
+  case_id_aggregated_information %>% 
+  group_by(START_MONTH, START_YEAR) %>% 
+  summarise(
+    TP_TIME_MEAN = mean(THROUGHPUT_TIME_HOURS),
+    TP_TIME_MEDIAN = median(THROUGHPUT_TIME_HOURS),
+    CASE_COUNT = n()
+  )
+```
+
 ## Data analytics
 
 ### Number of unique service cases
-
-How many unique service cases are in the dataset?
 ```{r unique cases}
 unique(clean_events$CASE_ID) %>% length()
 ```
 
 ### Distribution of events among servicepoints
-
-In an ideal scenario, every servicepoint would work on the same amout of service cases. This way, the capacities would be used most efficiently. Of course, the real world is not an ideal scenario, as the following graphic shows. The events are distributed unevenly between servicepoints, with only a few servicepoints accounting for most of the logged events.
-
 ```{r sp-distro}
 # servicepoints
 servicepoints <- table(clean_events$SERVICEPOINT)
@@ -119,9 +239,6 @@ sp_distro_plot
 ```
 
 ### "Five-day-repair quota" by servicepoint
-
-Also an interesting metric is the quota of service cases which are completed within five days, by servicepoint. We call this the "5-day-quota". This enables us to identify the most and least efficient servicepoints. We need to take into account that the cases are distributed unevenly, thats why we added the number of total cases per servicepoint to the bars.
-
 ```{r 5-day-quota}
 
 # das reperaturzeit flag steht in jedem eintrag eines CASEs, uns langt aber ein 
@@ -230,14 +347,11 @@ Happy Path is the most common path.
 
 "Happy Path" + average case number per day in one month:
 The case count was highest in October 2018 (103 cases), February 2019 (107), March 2019 (102) and April 2019 (103).
-Regarding the previous celonis analysis, the average throughput time per month and the average of cases per day in one month can be put in relation to each other, the more cases per day, the longer the throughput times. We recommend working faster, optionally with additional employees or overtime hours, instead of slowlier while more devices are sent in.
+Regarding the previous celonis analysis, the average throughput time per month and the average amount of cases per day in one month can be put in relation to each other, the more cases per day, the longer the throughput times.
 ![Happy Path + average case number per day in one month](https://github.com/CTM-development/WI_Seminar/blob/main/celonis_imgs/HappyPath+CasesPerDay.jpg?raw=true)
 
 Bottlenecks:
-Some of the activity connections which cost 1 day or more to process should be revised, especially the ones with throughput time increase of 5 days or more. 
-For example, 10% of the steps from NoteWorkshop to InDelivery can take the maximum process delay of 10 days. Due to this, the packing and sending of the devices should be sped up.
-Other relevant consecutive activities to improve are DeviceReceived->InDelivery, DeviceReceived->Letter, NoteHotline->InDelivery, which take 5 or more days and affect 25% or more each. Often, there is a delay after the activity DeviceReceived, so it should be investigated why further actions such as Transmission or Letter take an unnecessarily long time to be executed.
-Creation->DeviceReceived with 54% of affected cases and 6 days of delay can't be altered since the customer is in charge to send the device after the service task creation and the delivery time can't be influenced.
+The Bottleneck Analysis reveals exceedingly time consuming activities.
 ![Bottlenecks](https://github.com/CTM-development/WI_Seminar/blob/main/celonis_imgs/Bottlenecks.jpg?raw=true)
 
 
@@ -245,18 +359,23 @@ Creation->DeviceReceived with 54% of affected cases and 6 days of delay can't be
 
 # Business implications
 
-## Optimizing load distribution
-
+## Optimizing load distribution and working steps
 Currently the distribution of the workload among the servicepoints is suboptimal. The servicepoints E and L account for the majority of events, while A - D barely logged anything. This leads us to the assumption that most of the service cases are being processed by those SPs. We expect that an equal distribution of the workload between all available SPs would lead to an increase in repair speed and total capacity.
 
-## Error-prone devices
+Due to the relation of average throughput time per month and the average amount of cases per day in one month, as seen in the first two celonis analytics, we recommend working faster, optionally with additional employees or overtime hours, instead of slowlier while more devices are sent in.
 
+Some of the activity connections in the Bottleneck Analysis from celonis which cost 1 day or more to process should be revised, especially the ones with throughput time increase of 5 days or more. 
+For example, 10% of the steps from NoteWorkshop to InDelivery can take the maximum process delay of 10 days. Due to this, the packing and sending of the devices should be sped up. Other relevant consecutive activities to improve are DeviceReceived->InDelivery, DeviceReceived->Letter, NoteHotline->InDelivery, which take 5 or more days and affect 25% or more each. Often, there is a delay after the activity DeviceReceived, so it should be investigated why further actions such as Transmission or Letter take an unnecessarily long time to be executed.
+Creation->DeviceReceived with 54% of affected cases and 6 days of delay can't be altered since the customer is in charge to send the device after the service task creation and the delivery time can't be influenced.
+
+
+## Error-prone devices
 Different devices have a different proneness to technical failure. The underlying assumption is that those devices which are most likely to fail, will be brought in for service the most often. Also the devices differ in how long it takes on average to repair them. Using these two factors, one can estimate how service and resource intensive these devices are during their lifetime.
 
 The cluster analysis shows which devices are the most resource intensive ones by dividing them into three groups. The most error-prone device, with over 3000 service cases in the observed timespan and an average repair time of 27 days is the model AB52. We suggest removing this device from the product portfolio, as frequent failure of the device has a negative impact on customer satisfaction. 
 
-## Improve data collection
 
+## Improve data collection
 In order to perform detailed analysis of the service process, more data about the timing of activities is needed. Currently only the completion time of an activity is logged. We recommend to also track the start time of each activity. This way it's possible to make statements about the real duration of the activity and possible idle-times. As of now, it's impossible to say if an activity took a lot of time or if there was a lot of idle-time before it started.
 Also there were some event logs without information about the associated servicepoint. We recommend to install mechanisms that prevent incomplete logs from being saved.
 
