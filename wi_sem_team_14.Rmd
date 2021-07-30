@@ -14,11 +14,18 @@ require(ggplot2)
 require(cluster)
 library("tidyverse")
 library(dplyr)
+
+# using pacman to laod and install any packages
+install.packages("pacman")
+
+# load packages
+pacman::p_load(pacman, tidyverse, rio, dplyr, ggplot2, plotly, tidyr, rmarkdown, tinytex, lubridate, gridExtra, scales)
+
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 Lucca Baumgärtner (2269532)  
-Chris  
+Christopher Minderlein (22484855)  
 Theresa
 
 # Introduction
@@ -82,6 +89,124 @@ Create a subset of corrupt logs for further investigation.
 
 ```{r corrupted}
 corrupted_events <- subset(event_log,is.na(DEVICETYPE) | is.na(SERVICEPOINT))
+```
+
+
+```{r chris data motification, echo=FALSE}
+# cleaning the data and doing some tests
+df_clean_logs <- as.data.frame(do.call(cbind, clean_events))
+
+df_clean_logs$TIMESTAMP <- as.POSIXct(clean_events$TIMESTAMP, tz="",format="%Y-%m-%d %H:%M:%OS", optional = FALSE)
+```
+
+```{r creating df_mod_logs (a modificated copy of the base dataset), echo=FALSE}
+df_mod_logs <- df_clean_logs
+
+# creating DATE column (calculating for each row)
+df_mod_logs$DATE <- with(df_clean_logs, as.Date(TIMESTAMP))
+
+# creating WEEKDAY column
+df_mod_logs$WEEKDAY <- weekdays(df_mod_logs$DATE)
+
+# those cases started in 2013 and ended in 2018
+sleeper_cases <- c("Case5304", "Case5502", "Case5544")
+
+df_sleeper_cases <- df_clean_logs[df_mod_logs$CASE_ID%in%sleeper_cases,]
+df_mod_logs <- df_mod_logs[!(df_clean_logs$CASE_ID%in%sleeper_cases),]
+
+# checking if some case ids have datapoints with mixed rit values (rit = repair in time 5 days)
+df_check_for_corrupt_repair <- df_mod_logs %>% group_by(CASE_ID) %>% summarise(ACTIVITY_COUNT = n(),
+                                                                             RIT = first(REPAIR_IN_TIME_5D),
+                                                                             RIT_GROUP_COUNTER = (table(REPAIR_IN_TIME_5D))[2],
+                                                                             ERROR = !((RIT == 0 & 0 == RIT_GROUP_COUNTER) | (RIT ==1 & RIT_GROUP_COUNTER == ACTIVITY_COUNT))
+                                                                             )
+```
+
+#### creating a new dataframe containing aggregated information per case_id
+
+```{r create_new_dataframe_case_id_aggregats}
+case_id_aggregated_information <- 
+  df_mod_logs %>% group_by(CASE_ID) %>% 
+  summarise(SERVICEPOINT = first(SERVICEPOINT),
+            DEVICETYPE = first(DEVICETYPE), 
+            ACTIVITY_COUNT = n(),
+            START_DATETIME = min(TIMESTAMP), 
+            END_DATETIME = max(TIMESTAMP),
+            RIT = first(REPAIR_IN_TIME_5D), 
+            THROUGHPUT_TIME_HOURS = 
+              as.numeric(difftime(END_DATETIME, START_DATETIME, units="hours")),
+            START_MONTH = month(START_DATETIME),
+            START_YEAR = year(START_DATETIME),
+)
+# order dataset based on START_DATETIME
+case_id_aggregated_information <- case_id_aggregated_information[order(case_id_aggregated_information$START_DATETIME, decreasing = FALSE),]
+            
+rit_cases_too_long <- case_id_aggregated_information[case_id_aggregated_information$RIT == 1 & case_id_aggregated_information$THROUGHPUT_TIME_HOURS>120,]
+```
+
+### new dataframe containing duration information of each activity log
+
+```{r}
+df_activity_information <- 
+  df_mod_logs %>% 
+  group_by(CASE_ID, ACTIVITY) %>%
+  summarise(
+    START_TS = min(TIMESTAMP)
+  )
+
+calc_duration = function(x){
+  current_activity <- x[2]
+  current_case_id <- x[1]
+  current_activity_ts <- as.POSIXct(x[3], tz="UTC",format="%Y-%m-%d %H:%M:%OS", optional = FALSE)
+  
+  # print(paste("current case id: ", current_case_id))
+  # print(paste("current activity: " , current_activity))
+  # print(paste("current activity ts: " , current_activity_ts))
+  
+  ts_df <- as.data.frame(select(df_mod_logs[df_mod_logs$CASE_ID == current_case_id & df_mod_logs$ACTIVITY != current_activity, ], ACTIVITY, TIMESTAMP))
+  # renaming
+  names(ts_df)[names(ts_df)=="ACTIVITY"] <- "NEXT_ACTIVITY"
+  names(ts_df)[names(ts_df)=="TIMESTAMP"] <- "NEXT_ACTIVITY_TS"
+  
+  # print(ts_df$TIMESTAMP)
+  
+  ts_df <- ts_df[(difftime(ts_df$NEXT_ACTIVITY_TS, current_activity_ts)>0), ]
+  
+  ts_df[order(ts_df$NEXT_ACTIVITY_TS), ]
+  
+  # print(ts_df$TIMESTAMP)
+  # print(ts_df$ACTIVITY)
+  
+  re <- ts_df[1:1, ]
+  re$ACTIVITY <- current_activity
+  re$CASE_ID <- current_case_id
+  
+  return(re)
+}
+
+re_list <- apply(df_activity_information, 1 , calc_duration)
+print("apply done")
+re_df <- as.data.frame(do.call(rbind, re_list)) 
+
+merge_columns <- c("CASE_ID", "ACTIVITY")
+df_activity_information <- merge(df_activity_information, re_df, by=merge_columns, all.x = TRUE)
+
+df_activity_information$DURATION = difftime(df_activity_information$NEXT_ACTIVITY_TS, df_activity_information$START_TS, units = "hours")
+
+```
+
+### new dataframe containg throughput-time summaries per month
+
+```{r}
+# grp by month
+tp_time_monthly_avg <- 
+  case_id_aggregated_information %>% 
+  group_by(START_MONTH, START_YEAR) %>% 
+  summarise(
+    TP_TIME_MEAN = mean(THROUGHPUT_TIME_HOURS),
+    TP_TIME_MEDIAN = median(THROUGHPUT_TIME_HOURS),
+    CASE_COUNT = n()
+  )
 ```
 
 ## Data analytics
