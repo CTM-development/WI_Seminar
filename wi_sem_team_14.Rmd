@@ -124,7 +124,7 @@ df_check_for_corrupt_repair <- df_mod_logs %>% group_by(CASE_ID) %>% summarise(A
 
 #### creating a new dataframe containing aggregated information per case_id
 
-```{r create_new_dataframe_case_id_aggregats}
+```{r create_new_dataframe_case_id_aggregats, echo=TRUE}
 case_id_aggregated_information <- 
   df_mod_logs %>% group_by(CASE_ID) %>% 
   summarise(SERVICEPOINT = first(SERVICEPOINT),
@@ -146,7 +146,7 @@ rit_cases_too_long <- case_id_aggregated_information[case_id_aggregated_informat
 
 ### new dataframe containing duration information of each activity log
 
-```{r}
+```{r df creation, echo=True}
 df_activity_information <- 
   df_mod_logs %>% 
   group_by(CASE_ID, ACTIVITY) %>%
@@ -197,7 +197,7 @@ df_activity_information$DURATION = difftime(df_activity_information$NEXT_ACTIVIT
 
 ### new dataframe containg throughput-time summaries per month
 
-```{r}
+```{r tp-time per month, echo=TRUE}
 # grp by month
 tp_time_monthly_avg <- 
   case_id_aggregated_information %>% 
@@ -273,7 +273,7 @@ After performing the aggregations, needed to calculate the average repair time a
 
 Before performing a clusteranalysis, one has to determine the number of clusters that should be created from the data. Creating a dendrogram first, can help to decide what number of clusters makes sense.
 
-```{r dendro}
+```{r dendro, fig.width = 10}
 h.cluster <- avg_duration_by_device %>% dist(., method = "euclidean") %>% hclust(., method="ward.D")
 plot(h.cluster)
 

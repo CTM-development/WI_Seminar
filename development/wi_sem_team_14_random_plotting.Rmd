@@ -26,12 +26,6 @@ data_event_log <- read_delim(
 )
 ```
 
-Short summary of the raw dataset
-```{r summary, include=TRUE}
-summary(data_event_log)
-head(data_event_log)
-```
-
 Wertebereich für interessante Spalten ausgeben
 ```{r uniques}
 unique(data_event_log$ACTIVITY)
