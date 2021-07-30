@@ -17,9 +17,9 @@ library(dplyr)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Lucca Baumgärtner (2269532)  
-Chris  
-Theresa
+Lucca Baumgärtner         (22699532)  
+Theresa Riegel            (22527270)
+Christopher Minderlein    (22484855)  
 
 # Introduction
 
@@ -87,11 +87,16 @@ corrupted_events <- subset(event_log,is.na(DEVICETYPE) | is.na(SERVICEPOINT))
 ## Data analytics
 
 ### Number of unique service cases
+
+How many unique service cases are in the dataset?
 ```{r unique cases}
 unique(clean_events$CASE_ID) %>% length()
 ```
 
 ### Distribution of events among servicepoints
+
+In an ideal scenario, every servicepoint would work on the same amout of service cases. This way, the capacities would be used most efficiently. Of course, the real world is not an ideal scenario, as the following graphic shows. The events are distributed unevenly between servicepoints, with only a few servicepoints accounting for most of the logged events.
+
 ```{r sp-distro}
 # servicepoints
 servicepoints <- table(clean_events$SERVICEPOINT)
@@ -106,6 +111,9 @@ sp_distro_plot
 ```
 
 ### "Five-day-repair quota" by servicepoint
+
+Also an interesting metric is the quota of service cases which are completed within five days, by servicepoint. We call this the "5-day-quota". This enables us to identify the most and least efficient servicepoints. We need to take into account that the cases are distributed unevenly, thats why we added the number of total cases per servicepoint to the bars.
+
 ```{r 5-day-quota}
 
 # das reperaturzeit flag steht in jedem eintrag eines CASEs, uns langt aber ein 
