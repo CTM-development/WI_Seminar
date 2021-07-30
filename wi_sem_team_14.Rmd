@@ -2,7 +2,9 @@
 title: "ACME Case Study"
 author: "Team 14"
 date: "4 6 2021"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
