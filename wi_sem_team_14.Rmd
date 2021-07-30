@@ -1,7 +1,7 @@
 ---
 title: "ACME Case Study"
 author: "Team 14"
-date: "4 6 2021"
+date: "30.7.2021"
 output:
   html_document:
     df_print: paged
@@ -16,6 +16,10 @@ library("tidyverse")
 library(dplyr)
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+Lucca Baumgärtner (2269532)  
+Chris  
+Theresa
 
 # Introduction
 
@@ -123,7 +127,10 @@ plot
 ```
 
 ### Clusteranalysis of device robustness
-```{r cluster}
+
+ACME has a product portfolio of many different devices. We assume that these devices differ in processing quality, proneness to malfunction and longevity. The following cluster analysis aims to identify the most robust products and the most fragile ones, clustering them in quality groups. We define robustness through two factors: The total number of times that the observed device was brought in for service and secondly, the average time it took to repair it. This means that, per our definition, the most robust devices are the ones rarely brought in for service and when they are, their repair only takes a short amount of time.
+
+```{r robustness}
 case_total_duration <- group_by(clean_events, CASE_ID) %>%
   group_by(DEVICETYPE, .add = TRUE) %>%
   summarise(timemax = max(TIMESTAMP), timemin = min(TIMESTAMP), duration = timemax - timemin)
@@ -135,9 +142,21 @@ avg_duration_by_device <- case_total_duration %>%
 avg_duration_by_device$avg_time <- as.numeric(avg_duration_by_device$avg_time, units="days")
 
 ggplot(avg_duration_by_device, aes(case_count, avg_time)) + geom_point()
+```
 
+After performing the aggregations, needed to calculate the average repair time and total case count per device, we can display how the devices are distributed in these two dimensions. In the plot above, each dot represents a device. The closer the dot is to the top right, the less robust is the device.
+
+Before performing a clusteranalysis, one has to determine the number of clusters that should be created from the data. Creating a dendrogram first, can help to decide what number of clusters makes sense.
+
+```{r dendro}
 h.cluster <- avg_duration_by_device %>% dist(., method = "euclidean") %>% hclust(., method="ward.D")
 plot(h.cluster)
+
+```
+
+The dendrogram shows that the ideal number of clusters is between 2-3. With this information we proceed to create the final clusters.
+
+```{r cluster}
 
 p.cluster <- avg_duration_by_device %>% select(avg_time, case_count) %>% kmeans(., 3)
 p.cluster$cluster <- as.factor(p.cluster$cluster)
