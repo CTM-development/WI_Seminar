@@ -12,8 +12,16 @@ require(dplyr)
 require(broom)
 require(ggplot2)
 require(cluster)
+require(bupaR)
+require(tidyverse)
+require(daqapo)
 library("tidyverse")
 library(dplyr)
+library(bupaR)
+library(daqapo)
+library(broom)
+library(ggplot2)
+library(cluster)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -174,6 +182,39 @@ ggplot(avg_duration_by_device, aes(case_count, avg_time, label = DEVICETYPE)) +
   geom_label(aes(fill = p.cluster$cluster), colour = "white", fontface = "bold", size = 2)
 ```
 
+### Case lifetime
+
+Using a library called 'bupar', an R library for process analysis, it's possible to visualize the lifetime of all cases, and their individual events.
+
+```{r bupar}
+
+# read dataset
+bupar_events <- clean_events
+nrow <- nrow(bupar_events)
+# reformat dataset to fit bupar requirements
+instance_id_vec <- c(1:nrow)
+bupar_events$ACTIVITY_INSTANCE <- instance_id_vec
+
+bupar_events$STATUS <- "complete"
+
+# remove logs before 2017
+bupar_events <- filter(bupar_events, TIMESTAMP >= as.Date("2017-01-01"))
+
+# define eventlog for bupar
+acme_actlog <- bupar_events %>%
+  eventlog(
+    case_id = "CASE_ID",
+    activity_id = "ACTIVITY",
+    activity_instance_id = "ACTIVITY_INSTANCE",
+    lifecycle_id = "STATUS",
+    timestamp = "TIMESTAMP",
+    resource_id = "SERVICEPOINT"
+  )
+acme_actlog %>% dotted_chart(x = "absolute", y = "completed")
+
+```
+
+Each horizontal line represents one unqiue case. The colored dots on the line represent the activities. A lot of dots are 'scattered' in the top right corner of the plot. This means that the cases extend over a long period of time, sometimes even over years. Ideally the plot should display one thick diagonal line, implicating that all cases are completed within a similar timespan. Observing the line 'dissolving' to the right, means that a lot of cases take more time then they should.
 
 ## Celonis
 
