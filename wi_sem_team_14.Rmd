@@ -27,7 +27,7 @@ library(cluster)
 install.packages("pacman")
 
 # load packages
-pacman::p_load(pacman, tidyverse, rio, dplyr, ggplot2, plotly, tidyr, rmarkdown, tinytex, lubridate, gridExtra, scales, bupaR, daqapo)
+pacman::p_load(pacman, tidyverse, rio, dplyr, ggplot2, plotly, tidyr, rmarkdown, tinytex, lubridate, gridExtra, scales, bupaR, daqapo, processmapR)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -154,7 +154,7 @@ rit_cases_too_long <- case_id_aggregated_information[case_id_aggregated_informat
 
 ### new dataframe containing duration information of each activity log
 
-```{ df creation, echo=True}
+```{ df creation, include=FALSE}
 df_activity_information <- 
   df_mod_logs %>% 
   group_by(CASE_ID, ACTIVITY) %>%
@@ -203,7 +203,7 @@ df_activity_information$DURATION = difftime(df_activity_information$NEXT_ACTIVIT
 
 ```
 
-```{r load dataset instead of building it}
+```{r load dataset instead of building it, echo=FALSE}
 # read activity information from base dataset
 df_activity_information <- read_delim(
   "data/activity_information.csv",
@@ -219,22 +219,6 @@ unique(clean_events$CASE_ID) %>% length()
 ```
 
 ## Basic univariate plotting
-
-our quantitative variables are :
-
-* NONE ??
-
-our qualitative variables are:
-
-* CASE_ID (not sure tbh, bc this is part of the "primary key" of the dataset entities) {string} <- maybe convert to integer for easier processing
-* ACTIVITY {string}
-* SERVICEPOINT {char}
-* DEVICETYPE {string}
-* REPAIR_IN_TIME {double} <- maybe convert to boolean for easier processing
-
-neither?:
-
-* TIMESTAMP {double - feels more like a string tho}
 
 ### Plotting the frequency of our qualitative variables:
 ```{r univariate_plotting, echo=FALSE, fig.width = 11}
@@ -263,12 +247,9 @@ logs_per_date <- table(df_mod_logs$DATE)
 plot(main="logs per date", logs_per_date)
 
 ```
-```{r basic plotting the case_id_aggregated_information dataset}
-plot(main="throughput time ordered by START_DATETIME",as.Date(case_id_aggregated_information$START_DATETIME), case_id_aggregated_information$THROUGHPUT_TIME_HOURS, type = 'h')
-
-```
 
 ### Distribution of events among servicepoints
+
 ```{r sp-distro}
 # servicepoints
 servicepoints <- table(clean_events$SERVICEPOINT)
@@ -281,9 +262,15 @@ sp_distro_plot <- ggplot(data=sp_df, aes(x = Servicepoint, y= Freq, label= Freq)
 
 sp_distro_plot
 ```
+
 ### Looking at the throughput-time
 
 #### Overall throughput-time
+
+```{r basic plotting the case_id_aggregated_information dataset}
+plot(main="throughput time ordered by START_DATETIME",as.Date(case_id_aggregated_information$START_DATETIME), case_id_aggregated_information$THROUGHPUT_TIME_HOURS, type = 'h')
+
+```
 
 ```{r fig.align="center", echo = FALSE,fig.width = 14}
  ggplot(case_id_aggregated_information, aes(x = START_DATETIME, y = THROUGHPUT_TIME_HOURS)) + 
@@ -292,6 +279,7 @@ sp_distro_plot
            y = "Throughput time in hours",
            x = "Start datetime")
 ```
+
 #### Plotting throughput-time of RIT cases (Repair in 5 Days)
 
 ```{r fig.align="center", echo = FALSE,fig.width = 14}
@@ -342,7 +330,7 @@ ggplot(tp_time_monthly_avg, aes(x = START_DT_MONTH)) +
   theme(legend.position = "bottom") +
   scale_y_continuous(sec.axis =sec_axis( trans = ~ . /3, name="Throughput-time hours") ) +  #formats the 2nd axis
   guides(fill = guide_legend(order = 1),  color = guide_legend(order = 2))  +
-  labs(title = "Throughput time (in hrs) per case sorted by start date - red=median, blue=mean")
+  labs(title = "Throughput time (in hrs) per case sorted by start date - red=median, blue=mean", x ="Month", y="Case Count")
 
 ```
 
