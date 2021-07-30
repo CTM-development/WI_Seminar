@@ -193,7 +193,7 @@ The Bottleneck Analysis reveals exceedingly time consuming activities.
 
 # Business implications
 
-## Optimizing load distribution
+## Optimizing load distribution and working steps
 Currently the distribution of the workload among the servicepoints is suboptimal. The servicepoints E and L account for the majority of events, while A - D barely logged anything. This leads us to the assumption that most of the service cases are being processed by those SPs. We expect that an equal distribution of the workload between all available SPs would lead to an increase in repair speed and total capacity.
 
 Due to the relation of average throughput time per month and the average amount of cases per day in one month, as seen in the first two celonis analytics, we recommend working faster, optionally with additional employees or overtime hours, instead of slowlier while more devices are sent in.
