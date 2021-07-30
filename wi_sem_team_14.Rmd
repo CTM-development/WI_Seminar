@@ -19,28 +19,44 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Introduction
 
+ACME is a manufacturer for premium quality blenders "made in germany". Their unique selling point is the user experience, provided by the touch screens on their devices. High customer satisfaction is seen as the key to customer loyalty and should be achieved through communication and kind service. This is why all devices come with a five year warranty by default. In case of a malfunction, the customers can visit the local servicepoint in Nuremberg, where the device will be taken in for repair.
+
+Surveys have shown that the current service process is far from optimal, resulting in a lower customer satisfaction. In order to improve the process, we will perform an extensive analysis of the current process, identify the weaknesses and bottlenecks and provide suggestions for improvement.
+
+The basis for this analysis is an event log, provided by ACME. The logfile will be analyzed using the programming language R and the process analytics software Celonis.
+
 # Process analytics
+
+In this section we will perform analyses on the provided dataset. First we have to ensure the integrity and consistency of the data, otherwise the results cannot be trusted. After cleaning and preparing the data, we will extract relevant information about the process and meaningful conferences from it. We'll do this by applying basic aggregation and visualization techniques but also through the use of unsupervised machine learning and the powerful process analytics suite Celonis.
 
 ## Information gathering
 
-Datensatz lesen und generellen Überblick verschaffen.
+First we'll have to get a general overview of the dataset, its dimensions and attributes.
 
 ```{r events, include=FALSE}
 event_log <- read_delim("./data/event_log.csv", delim=";")
 ```
-Zusammenfassung ausgeben
+
 ```{r summary}
 summary(event_log)
 
 ```
+This summary provides us with basic information about the attributes, saved for each event:
 
-Ersten 10 Datensätzen ausgeben
+- CASE_ID (char)
+- ACTIVITY (char)
+- TIMESTAMP (datetime)
+- REPAIR_IN_TIME_5D (int/boolean)
+- DEVICETYPE (char)
+- SERVICEPOINT (char)
+
+To get a better idea of what the events look like, we output the first ten rows of the dataset.
 ```{r head}
 head(event_log, n=10)
 
 ```
 
-Wertebereich für interessante Spalten ausgeben
+Of course this is only a small example of possible events. We want to know about all possible values contained in a certain column. Doing this, gives us a better idea of how many different devices or servicepoints there are, but also helps identifying possibly invalid values.
 ```{r uniques}
 unique(event_log$ACTIVITY)
 unique(event_log$DEVICETYPE)
@@ -48,26 +64,30 @@ unique(event_log$SERVICEPOINT)
 unique(event_log$REPAIR_IN_TIME_5D)
 ```
 
+From this output we can already identify two attributes that could cause problems later on in our analyses. It seems like some events didn't properly log the devicetype and the servicepoint, resulting in NA-values.
+
 ## Data cleaning
 
-Datensätze ohne Angabe zu Servicepoint oder Gerät ausschließen.
+We know that there are Exclude logs without information about the servicepoint or the device type.
 
 ```{r na omit}
 clean_events <- na.omit(event_log)
 ```
 
-Datensatz aus unvollständigen Sätzen abspalten.
+Create a subset of corrupt logs for further investigation.
+
 ```{r corrupted}
 corrupted_events <- subset(event_log,is.na(DEVICETYPE) | is.na(SERVICEPOINT))
 ```
+
 ## Data analytics
 
-Wie viele verschiedene Bearbeitungsfälle gibt es?
-
+### Number of unique service cases
 ```{r unique cases}
 unique(clean_events$CASE_ID) %>% length()
 ```
-Wie sind die Events auf die Servicepoints verteilt?
+
+### Distribution of events among servicepoints
 ```{r sp-distro}
 # servicepoints
 servicepoints <- table(clean_events$SERVICEPOINT)
@@ -80,8 +100,8 @@ sp_distro_plot <- ggplot(data=sp_df, aes(x = Servicepoint, y= Freq, label= Freq)
 
 sp_distro_plot
 ```
-5-Tage-Reperatur-Quote nach Servicepoint
 
+### "Five-day-repair quota" by servicepoint
 ```{r 5-day-quota}
 
 # das reperaturzeit flag steht in jedem eintrag eines CASEs, uns langt aber ein 
@@ -101,7 +121,8 @@ plot <- ggplot(data = by_servicep, aes(x=SERVICEPOINT, y=quota, label=all)) +
   geom_text(size = 3, position = position_stack(vjust = 0.5))
 plot
 ```
-Clusteranalyse Anfälligkeit der Geräte
+
+### Clusteranalysis of device robustness
 ```{r cluster}
 case_total_duration <- group_by(clean_events, CASE_ID) %>%
   group_by(DEVICETYPE, .add = TRUE) %>%
