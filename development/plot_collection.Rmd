@@ -85,7 +85,8 @@ ggplot(tp_time_monthly_avg, aes(x = START_DT_MONTH)) +
   scale_color_identity(guide = "legend", label="blue = medium", name=NULL) +
   theme(legend.position = "bottom") +
   scale_y_continuous(sec.axis =sec_axis( trans = ~ . /3, name="Throughput-time hours") ) +  #formats the 2nd axis
-  guides(fill = guide_legend(order = 1),  color = guide_legend(order = 2))                                #control which scale plots first
+  guides(fill = guide_legend(order = 1),  color = guide_legend(order = 2))  +
+  labs(title = "Throughput time (in hrs) per case sorted by start date")
 
 ```
 

@@ -109,7 +109,7 @@ rit_cases_too_long <- case_id_aggregated_information[case_id_aggregated_informat
 
 ### new dataframe containing duration information of each activity log
 
-```{r}
+```{}
 activity_information <- 
   df_cl_mod %>% 
   group_by(CASE_ID, ACTIVITY) %>%
