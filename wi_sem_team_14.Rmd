@@ -129,37 +129,24 @@ ggplot(avg_duration_by_device, aes(case_count, avg_time, label = DEVICETYPE)) +
 
 ## Celonis
 
-"Happy Path" + throughput time per month:
-optimal sequence of activities
-takes an average of 24 days, all paths got 17 days average duration
-throughput time was on its maximum in October 2018 (24 days) and took 20 days in January, February and April, the second highest duration
-cases before year 2018 were erased as in other analytics because first cases documented were in 2013, but with throughput times of 5 years (and missing entries?)
+Note: Cases before the year 2018 were erased as in previous analytics because first ones documented were in 2013, but marked with throughput times of 5 years and some missing entries. From 2014 to 2017, there were no cases.
+
+"Happy Path" + average throughput time per month:
+This "Happy Path" in the picture shows an optimal sequence of activities. It takes about 24 days to process, all paths (without extreme outliers) got a 17 days average duration. Including these outliers, the  average throughput time is at 20 days (compare picture 3: Bottlenecks). The Happy Path involves the activities Creation, DeviceReceived, Letter, Transmission, Approved, NoteHotline, InDelivery and Completed in this order.
+Throughput time was on its maximum in October 2018 (24 days) and took 20 days in January 2019, February 2019 and April 2019, which is the second highest duration.
 ![Happy Path + throughput time per month](https://github.com/CTM-development/WI_Seminar/blob/main/celonis_imgs/HappyPath+DurationPerMonth.jpg?raw=true)
 
 "Happy Path" + average case number per day in one month:
-case count was highest in October 2018 (103 cases), February 2019 (107), March 2019 (102) and April 2019 (103)
-regarding the previous celonis analysis the throughput time per month and the average of cases per day in one month can be seen in relation to each other
+The case count was highest in October 2018 (103 cases), February 2019 (107), March 2019 (102) and April 2019 (103).
+Regarding the previous celonis analysis, the average throughput time per month and the average of cases per day in one month can be put in relation to each other, the more cases per day, the longer the throughput times. We recommend working faster, optionally with additional employees or overtime hours, instead of slowlier while more devices are sent in.
 ![Happy Path + average case number per day in one month](https://github.com/CTM-development/WI_Seminar/blob/main/celonis_imgs/HappyPath+CasesPerDay.jpg?raw=true)
 
 Bottlenecks:
+Some of the activity connections which cost 1 day or more to process should be revised, especially the ones with throughput time increase of 5 days or more. 
+For example, 10% of the steps from NoteWorkshop to InDelivery can take the maximum process delay of 10 days. Due to this, the packing and sending of the devices should be sped up.
+Other relevant consecutive activities to improve are DeviceReceived->InDelivery, DeviceReceived->Letter, NoteHotline->InDelivery, which take 5 or more days and affect 25% or more each. Often, there is a delay after the activity DeviceReceived, so it should be investigated why further actions such as Transmission or Letter take an unnecessarily long time to be done.
+Creation->DeviceReceived with 54% of affected cases and 6 days of delay can't be altered since the customer is in charge to send the device after the service task creation and the delivery time can't be influenced.
 ![Bottlenecks](https://github.com/CTM-development/WI_Seminar/blob/main/celonis_imgs/Bottlenecks.jpg?raw=true)
-
-Path with shortest throughput time:
-![Path with shortest throughput time](https://github.com/CTM-development/WI_Seminar/blob/main/celonis_imgs/Path%20with%20shortest%20Throughput%20Time.PNG?raw=true)
-
-Top 10 paths with the shortest throughput times:
-no improvements needed
-conforms 0% of all paths
-![Top10 shortest throughput time](https://github.com/CTM-development/WI_Seminar/blob/main/Top%2010%20shortest%20Throughput%20Time.jpg?raw=true)
-
-Top 10 paths with the longest throughput times:
-should be improved
-![top10 longest throughput time](https://github.com/CTM-development/WI_Seminar/blob/main/Top%2010%20longest%20Throughput%20Time.jpg?raw=true)
-
-Top 10 most common paths:
-conform to 21% of all possible paths
-![top10 most common](https://github.com/CTM-development/WI_Seminar/blob/main/Top10%20Most%20Common.jpg?raw=true)
-
 
 
 
